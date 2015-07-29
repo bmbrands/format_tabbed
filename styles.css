@@ -1,0 +1,11 @@
+.course-content ul.tabbed {margin:0;}
+.course-content ul.tabbed li.section {list-style: none;margin:0 0 5px 0;padding:0;}
+.course-content ul.tabbed li.section .content, .course-content #tabbedcontent div.section .content {margin:0 40px;}
+.course-content ul.tabbed li.section .left, .course-content #tabbedcontent div.section .left {float:left;}
+.course-content ul.tabbed li.section .right, .course-content #tabbedcontent div.section .right {float:right;}
+.course-content ul.tabbed li.section .left, .course-content #tabbedcontent div.section .left,
+.course-content ul.tabbed li.section .right, .course-content #tabbedcontent div.section .right {width:40px;text-align:center;padding: 6px 0;}
+.course-content ul.tabbed li.section .right img.icon, .course-content #tabbedcontent div.section .right img.icon { padding: 0 0 4px 0;}
+.course-content ul.tabbed li.section .left .section-handle img.icon, .course-content #tabbedcontent div.section .left .section-handle img.icon { padding:0; vertical-align: baseline; }
+.course-content #tabbedcontent div.section.hidden.active { filter: alpha(opacity=50); opacity: .5; display: block !important; visibility: visible !important; } /* li.section.hidden .opacity(.5) mixin in course.less and same as li.section.hidden in undo.less */
+body.editing .course-content ul.tabbed li#section-0 { display: none; visibility: hidden; }
