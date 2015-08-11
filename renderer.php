@@ -264,11 +264,21 @@ class format_tabbed_renderer extends format_section_renderer_base {
 
         // Tabs.
         if (!$this->userisediting) {
-            echo html_writer::start_tag('ul', array('class' => 'nav nav-tabs', 'role' => 'tablist'));
+            echo html_writer::start_tag('ul', array('class' => 'nav nav-pills nav-wizard', 'role' => 'tablist'));
+
+
             foreach ($sections as $section => $thissection) {
+                $first = false;
+                $last = false;
                 if ($section > $course->numsections) {
                     // Activities inside this section are 'orphaned', this section will be printed as 'stealth' below.
                     continue;
+                }
+                if ($section == $course->numsections) {
+                  $last = true;
+                }
+                if ($section ==  1) {
+                  $first = true;
                 }
                 /* Show the section if the user is permitted to access it, OR if it's not available
                    but there is some available info text which explains the reason & should display. */
@@ -278,17 +288,23 @@ class format_tabbed_renderer extends format_section_renderer_base {
                 if (!$showsection) {
                     continue;
                 }
-                $tabattributes = array('role' => 'presentation');
+                $tabattributes = array('role' => 'presentation', 'id' => 'navtab' . $section, 'class' => 'tabbednavtab');
                 if (!$this->activesection) {
                     $this->activesection = $thissection->section;
-                    $tabattributes['class'] = 'active';
+                    $tabattributes['class'] = 'tabbednavtab active';
                 }
                 echo html_writer::start_tag('li', $tabattributes);
+                if (!$first) {
+                  echo html_writer::tag('div', '', array('class' => 'nav-wedge'));
+                }
                 echo html_writer::tag('a', $this->courseformat->get_section_name($thissection),
                         array('href' => '#section-'.$thissection->section,
                               'data-toggle' => 'tab',
                               'role' => 'tab',
                               'aria-controls' => 'section-'.$thissection->section));
+                if (!$last) {
+                  echo html_writer::tag('div', '', array('class' => 'nav-arrow'));
+                }
                 echo html_writer::end_tag('li');
             }
             echo html_writer::end_tag('ul');
@@ -321,6 +337,12 @@ class format_tabbed_renderer extends format_section_renderer_base {
             if ($thissection->uservisible) {
                 echo $this->courserenderer->course_section_cm_list($course, $thissection, 0);
                 echo $this->courserenderer->course_section_add_cm_control($course, $section, 0);
+                $sectionnavlinks = $this->get_nav_links($course, $modinfo->get_section_info_all(), $section);
+                $navlinks = html_writer::start_tag('div', array('class' => 'section-navigation navigationtitle'));
+                $navlinks .= html_writer::tag('span', $sectionnavlinks['previous'], array('class' => 'pull-left'));
+                $navlinks .= html_writer::tag('span', $sectionnavlinks['next'], array('class' => 'pull-right'));
+                $navlinks .= html_writer::end_tag('div');
+                echo $navlinks; 
             }
             echo $this->section_footer();
         }
@@ -335,6 +357,7 @@ class format_tabbed_renderer extends format_section_renderer_base {
                 echo $this->stealth_section_header($section);
                 echo $this->courserenderer->course_section_cm_list($course, $thissection, 0);
                 echo $this->stealth_section_footer();
+
             }
 
             echo $this->end_section_list();
@@ -369,5 +392,52 @@ class format_tabbed_renderer extends format_section_renderer_base {
                 echo html_writer::end_tag('div');
             }
         }
+    }
+
+    /**
+     * Generate next/previous section links for naviation
+     *
+     * @param stdClass $course The course entry from DB
+     * @param array $sections The course_sections entries from the DB
+     * @param int $sectionno The section number in the coruse which is being dsiplayed
+     * @return array associative array with previous and next section link
+     */
+    protected function get_nav_links($course, $sections, $sectionno) {
+        // FIXME: This is really evil and should by using the navigation API.
+        $course = course_get_format($course)->get_course();
+        $canviewhidden = has_capability('moodle/course:viewhiddensections', context_course::instance($course->id))
+            or !$course->hiddensections;
+
+        $links = array('previous' => '', 'next' => '');
+        $back = $sectionno - 1;
+        while ($back > 0 and empty($links['previous'])) {
+            if ($canviewhidden || $sections[$back]->uservisible) {
+                $params = array();
+                if (!$sections[$back]->visible) {
+                    $params = array('class' => 'dimmed_text');
+                }
+                $previouslink = '<i class="fa fa-arrow-left"></i> ';
+                $previouslink .= get_section_name($course, $sections[$back]);
+                $links['previous'] = '<a data-target="'.$back.'" href="#section-' . $back . '" class="btn btn-default prevnext" data-toggle="tab" role="tab" aria-controls="section-'. $back .'"> ' . $previouslink . '</a>';
+            }
+            $back--;
+        }
+
+        $forward = $sectionno + 1;
+        while ($forward <= $course->numsections and empty($links['next'])) {
+            if ($canviewhidden || $sections[$forward]->uservisible) {
+                $params = array();
+                if (!$sections[$forward]->visible) {
+                    $params = array('class' => 'dimmed_text');
+                }
+                $nextlink = get_section_name($course, $sections[$forward]);
+                $nextlink .= ' <i class="fa fa-arrow-right"></i>';
+
+                $links['next'] = '<a data-target="'.$forward.'" href="#section-' . $forward . '" class="btn btn-default prevnext" data-toggle="tab" role="tab" aria-controls="section-'. $forward .'">' . $nextlink . ' </a>';
+            }
+            $forward++;
+        }
+
+        return $links;
     }
 }
